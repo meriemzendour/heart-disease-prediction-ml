@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Détection Précoce des Maladies Cardiovasculaires — 16 Features</title>
+  <style>
+    :root {
+      --blue:    #4472C4;
+      --blue2:   #2C5282;
+      --orange:  #ED7D31;
+      --green:   #27AE60;
+      --red:     #C0392B;
+      --gray:    #F4F6F9;
+      --border:  #D5DCE8;
+      --text:    #2C3E50;
+      --subtext: #7F8C8D;
+      --purple:  #7B52AB;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--gray);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue2) 100%);
+      color: white;
+      padding: 28px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    header h1 { font-size: 1.55rem; font-weight: 700; letter-spacing: 0.4px; }
+    header p  { font-size: 0.88rem; opacity: 0.85; margin-top: 4px; }
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 20px;
+      padding: 3px 13px;
+      font-size: 0.76rem;
+    }
+    .badge.fe { background: rgba(237,125,49,0.35); border-color: rgba(237,125,49,0.6); }
+
+    main {
+      max-width: 960px;
+      margin: 30px auto;
+      padding: 0 20px 50px;
+    }
+
+    /* ── NOTICES ── */
+    .notice {
+      background: #EBF5FB;
+      border-left: 4px solid var(--blue);
+      border-radius: 6px;
+      padding: 13px 18px;
+      font-size: 0.87rem;
+      color: #1A5276;
+      margin-bottom: 18px;
+    }
+    .notice-fe {
+      background: #FEF9E7;
+      border-left: 4px solid var(--orange);
+      border-radius: 6px;
+      padding: 13px 18px;
+      font-size: 0.85rem;
+      color: #7D6608;
+      margin-bottom: 18px;
+    }
+    .notice-fe strong { color: var(--orange); }
+    .error-box {
+      background: #FDEDEC;
+      border-left: 4px solid var(--red);
+      border-radius: 6px;
+      padding: 13px 18px;
+      font-size: 0.87rem;
+      color: var(--red);
+      margin-bottom: 18px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .card-header {
+      background: var(--blue);
+      color: white;
+      padding: 13px 22px;
+      font-weight: 600;
+      font-size: 0.98rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-header.orange { background: linear-gradient(90deg, var(--orange), #C0602A); }
+    .card-body { padding: 22px 26px; }
+
+    /* ── SECTION TITLES ── */
+    .section-title {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--blue);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 6px;
+      margin: 22px 0 15px;
+    }
+    .section-title:first-child { margin-top: 0; }
+    .section-title.orange { color: var(--orange); border-color: var(--orange); }
+
+    /* ── GRIDS ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    /* ── FIELDS ── */
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label {
+      font-size: 0.81rem;
+      font-weight: 600;
+      color: var(--subtext);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .field label .unit {
+      font-weight: 400;
+      font-size: 0.74rem;
+      color: #AAB7C4;
+    }
+    .field label .fe-tag {
+      font-size: 0.65rem;
+      background: #FFF3CD;
+      color: #856404;
+      border: 1px solid #FFEAA0;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-weight: 700;
+    }
+    .field input, .field select {
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      font-size: 0.92rem;
+      color: var(--text);
+      background: white;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(68,114,196,0.12);
+    }
+    .field .hint { font-size: 0.71rem; color: #AAB7C4; }
+
+    /* ── DERIVED PREVIEW (live calc) ── */
+    .derived-box {
+      background: linear-gradient(135deg, #FEF9E7, #FFF8EF);
+      border: 1.5px solid #F5CBA7;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-top: 18px;
+    }
+    .derived-box h3 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--orange);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .derived-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .derived-item { text-align: center; }
+    .derived-item .d-label { font-size: 0.68rem; color: var(--subtext); margin-bottom: 3px; }
+    .derived-item .d-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--orange);
+    }
+    .derived-item .d-formula { font-size: 0.65rem; color: #AAB7C4; margin-top: 2px; }
+
+    /* ── SUBMIT ── */
+    .btn-submit {
+      display: block;
+      width: 100%;
+      margin-top: 26px;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--blue), var(--blue2));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.4px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-submit:hover:not(:disabled) { opacity: 0.91; transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .disclaimer {
+      text-align: center;
+      font-size: 0.77rem;
+      color: var(--subtext);
+      margin-top: 16px;
+      padding: 12px;
+      background: #FDFEFE;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    footer {
+      text-align: center;
+      padding: 18px;
+      font-size: 0.77rem;
+      color: var(--subtext);
+      border-top: 1px solid var(--border);
+      background: white;
+    }
+
+    @media (max-width: 620px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .derived-grid { grid-template-columns: 1fr; }
+      header { padding: 20px; }
+      .card-body { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🫀 Système de Prédiction des Maladies Cardiaques</h1>
+  <p>Détection Précoce des Maladies Cardiovasculaires par Apprentissage Automatique</p>
+  <div class="badges">
+    <span class="badge">Modèle : {{ model_name }}</span>
+    <span class="badge">Dataset : Heart Disease UCI</span>
+    <span class="badge fe">⚙︎ 16 Features (13 cliniques + 3 dérivées)</span>
+  </div>
+</header>
+
+<main>
+  {% if not model_loaded %}
+  <div class="error-box">
+    ⚠️ Le modèle n'est pas encore chargé. Veuillez d'abord exécuter
+    <code>heart_disease_final.py</code> pour générer les fichiers
+    <code>best_model.pkl</code>, <code>scaler.pkl</code>, <code>imputer.pkl</code>
+    et <code>feature_names.pkl</code> dans le dossier courant.
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="error-box">❌ Erreur : {{ error }}</div>
+  {% endif %}
+
+  <div class="notice">
+    ➤ Saisissez les <strong>13 données cliniques</strong> du patient. L'application calcule
+    automatiquement les <strong>3 variables dérivées</strong> (feature engineering) puis applique
+    l'imputation médiane et le StandardScaler identiques à la phase d'entraînement.
+  </div>
+
+  <div class="notice-fe">
+    ⚙︎ <strong>Feature Engineering automatique :</strong>
+    Le modèle utilise <strong>16 variables</strong> au total.
+    Les 3 variables dérivées sont calculées automatiquement à partir de vos saisies :
+    <code>chol_thalach_ratio</code> (chol ÷ thalach) &nbsp;·&nbsp;
+    <code>bp_age_product</code> (tension × âge) &nbsp;·&nbsp;
+    <code>age_group</code> (catégorie d'âge 0–3).
+  </div>
+
+  <div class="card">
+    <div class="card-header"> Données Cliniques du Patient</div>
+    <div class="card-body">
+      <form method="POST" action="/predict" id="predForm">
+
+        <!-- Section 1 : Démographiques -->
+        <div class="section-title">Données démographiques</div>
+        <div class="grid-3">
+          <div class="field">
+            <label>Âge <span class="unit">(années)</span></label>
+            <input type="number" name="age" id="age" min="20" max="80" value="55" required>
+            <span class="hint">Entre 20 et 80 ans</span>
+          </div>
+          <div class="field">
+            <label>Sexe</label>
+            <select name="sex">
+              <option value="1">Homme</option>
+              <option value="0">Femme</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Douleur thoracique <span class="unit">(cp)</span></label>
+            <select name="cp">
+              <option value="0">0 : Angine typique</option>
+              <option value="1">1 : Angine atypique</option>
+              <option value="2" selected>2 : Douleur non angineuse</option>
+              <option value="3">3 : Asymptomatique</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Section 2 : Mesures cardiovasculaires -->
+        <div class="section-title">Mesures cardiovasculaires</div>
+        <div class="grid-3">
+          <div class="field">
+            <label>Tension artérielle <span class="unit">(mm Hg)</span></label>
+            <input type="number" name="trestbps" id="trestbps" min="80" max="210" value="140" required>
+            <span class="hint">Tension au repos</span>
+          </div>
+          <div class="field">
+            <label>Cholestérol <span class="unit">(mg/dl)</span></label>
+            <input type="number" name="chol" id="chol" min="100" max="600" value="240" required>
+            <span class="hint">Cholestérol sérique</span>
+          </div>
+          <div class="field">
+            <label>Fréquence cardiaque max <span class="unit">(bpm)</span></label>
+            <input type="number" name="thalach" id="thalach" min="60" max="210" value="150" required>
+            <span class="hint">thalach</span>
+          </div>
+        </div>
+
+        <!-- Section 3 : Biologie & ECG -->
+        <div class="section-title">Examens biologiques et ECG</div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Glycémie à jeun &gt; 120 mg/dl <span class="unit">(fbs)</span></label>
+            <select name="fbs">
+              <option value="0" selected>Non (0)</option>
+              <option value="1">Oui (1)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>ECG au repos <span class="unit">(restecg)</span></label>
+            <select name="restecg">
+              <option value="0">0 : Normal</option>
+              <option value="1" selected>1 : Anomalie onde ST-T</option>
+              <option value="2">2 : Hypertrophie ventriculaire</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Angine d'effort <span class="unit">(exang)</span></label>
+            <select name="exang">
+              <option value="0" selected>Non (0)</option>
+              <option value="1">Oui (1)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Dépression segment ST <span class="unit">(oldpeak)</span></label>
+            <input type="number" name="oldpeak" min="0" max="7" step="0.1" value="1.5" required>
+            <span class="hint">Induite par effort vs repos</span>
+          </div>
+        </div>
+
+        <!-- Section 4 : Examens spécialisés -->
+        <div class="section-title">Examens spécialisés</div>
+        <div class="grid-3">
+          <div class="field">
+            <label>Pente segment ST <span class="unit">(slope)</span></label>
+            <select name="slope">
+              <option value="0">0 : Ascendante</option>
+              <option value="1" selected>1 : Plate</option>
+              <option value="2">2 : Descendante</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Vaisseaux colorés <span class="unit">(ca : 0–3)</span></label>
+            <input type="number" name="ca" min="0" max="3" value="0" required>
+            <span class="hint">Fluoroscopie</span>
+          </div>
+          <div class="field">
+            <label>Thalassémie <span class="unit">(thal)</span></label>
+            <select name="thal">
+              <option value="3">3 : Normal</option>
+              <option value="6">6 : Défaut fixe</option>
+              <option value="7" selected>7 : Défaut réversible</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Aperçu en temps réel des features dérivées -->
+        <div class="derived-box">
+          <h3>⚙️ Variables dérivées calculées automatiquement</h3>
+          <div class="derived-grid">
+            <div class="derived-item">
+              <div class="d-label">chol_thalach_ratio</div>
+              <div class="d-value" id="previewRatio">1.600</div>
+              <div class="d-formula">chol ÷ thalach</div>
+            </div>
+            <div class="derived-item">
+              <div class="d-label">bp_age_product</div>
+              <div class="d-value" id="previewBP">7700</div>
+              <div class="d-formula">tension × âge</div>
+            </div>
+            <div class="derived-item">
+              <div class="d-label">age_group</div>
+              <div class="d-value" id="previewAG">2</div>
+              <div class="d-formula">0=≤40 · 1=41–50 · 2=51–60 · 3=&gt;60</div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" {% if not model_loaded %}disabled{% endif %}>
+           Analyser le risque cardiaque (16 features)
+        </button>
+      </form>
+
+      <div class="disclaimer">
+        ⚕︎ <strong>Avertissement médical :</strong> Cette application est un outil d'aide
+        à la décision basé sur un modèle de machine learning académique. Elle ne remplace
+        en aucun cas un diagnostic médical professionnel. Consultez toujours un médecin qualifié.
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+Détection Précoce des Maladies Cardiovasculaires par Apprentissage Automatique</footer>
+
+<script>
+  // Aperçu en temps réel des features dérivées
+  const inputs = ['age', 'trestbps', 'chol', 'thalach'];
+  inputs.forEach(id => document.getElementById(id)
+    .addEventListener('input', updateDerived));
+
+  function updateDerived() {
+    const age     = parseFloat(document.getElementById('age').value)     || 0;
+    const trestbps= parseFloat(document.getElementById('trestbps').value)|| 0;
+    const chol    = parseFloat(document.getElementById('chol').value)    || 0;
+    const thalach = parseFloat(document.getElementById('thalach').value) || 1;
+
+    const ratio = thalach > 0 ? (chol / thalach).toFixed(3) : '—';
+    const bp    = (trestbps * age).toFixed(0);
+    const ag    = age <= 40 ? 0 : age <= 50 ? 1 : age <= 60 ? 2 : 3;
+
+    document.getElementById('previewRatio').textContent = ratio;
+    document.getElementById('previewBP').textContent   = bp;
+    document.getElementById('previewAG').textContent   = ag;
+  }
+  updateDerived();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Résultat : Prédiction Cardiaque — 16 Features</title>
+  <style>
+    :root {
+      --blue:   #4472C4;
+      --blue2:  #2C5282;
+      --orange: #ED7D31;
+      --green:  #27AE60;
+      --red:    #C0392B;
+      --yellow: #F39C12;
+      --gray:   #F4F6F9;
+      --border: #D5DCE8;
+      --text:   #2C3E50;
+      --sub:    #7F8C8D;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--gray);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue2) 100%);
+      color: white;
+      padding: 22px 40px;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; }
+    header p  { font-size: 0.85rem; opacity: 0.8; margin-top: 3px; }
+
+    main {
+      max-width: 860px;
+      margin: 30px auto;
+      padding: 0 20px 50px;
+    }
+
+    /* ── RESULT BOX ── */
+    .result-box {
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+      text-align: center;
+    }
+    .result-box.high   { background: linear-gradient(135deg,#FDEDEC,#FDEBD0); border:2px solid var(--red); }
+    .result-box.medium { background: linear-gradient(135deg,#FEF9E7,#FDEBD0); border:2px solid var(--yellow); }
+    .result-box.low    { background: linear-gradient(135deg,#EAFAF1,#D5F5E3); border:2px solid var(--green); }
+
+    .result-icon  { font-size: 3.8rem; margin-bottom: 10px; }
+    .result-title { font-size: 1.45rem; font-weight: 700; margin-bottom: 6px; }
+    .result-box.high   .result-title { color: var(--red); }
+    .result-box.medium .result-title { color: var(--yellow); }
+    .result-box.low    .result-title { color: var(--green); }
+    .result-subtitle { font-size: 0.97rem; color: var(--sub); margin-bottom: 18px; }
+
+    /* Gauge */
+    .gauge-label { font-size: 0.78rem; color: var(--sub); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+    .gauge-bar   { background:#E8ECF0; border-radius:20px; height:18px; overflow:hidden; margin-bottom:5px; }
+    .gauge-fill  { height:100%; border-radius:20px; transition:width .8s ease; }
+    .gauge-fill.high   { background: linear-gradient(90deg,#E74C3C,#C0392B); }
+    .gauge-fill.medium { background: linear-gradient(90deg,#F39C12,#E67E22); }
+    .gauge-fill.low    { background: linear-gradient(90deg,#2ECC71,#27AE60); }
+    .gauge-value { font-size:1.75rem; font-weight:700; margin-top:6px; }
+    .gauge-value.high   { color:var(--red); }
+    .gauge-value.medium { color:var(--yellow); }
+    .gauge-value.low    { color:var(--green); }
+
+    .risk-badge {
+      display:inline-block; padding:5px 18px; border-radius:20px;
+      font-weight:700; font-size:.88rem; letter-spacing:.5px; margin-top:10px;
+    }
+    .risk-badge.high   { background:var(--red);    color:white; }
+    .risk-badge.medium { background:var(--yellow);  color:white; }
+    .risk-badge.low    { background:var(--green);   color:white; }
+
+    /* ── INFO CARDS ── */
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+    .info-card {
+      background:white; border-radius:9px; padding:16px 18px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.06); border-left:4px solid var(--blue);
+    }
+    .info-card h3 { font-size:.76rem; text-transform:uppercase; letter-spacing:.8px; color:var(--sub); margin-bottom:5px; }
+    .info-card p  { font-size:.97rem; font-weight:600; color:var(--text); }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-card {
+      background:white; border-radius:9px; padding:18px 22px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:18px;
+    }
+    .summary-card h2 {
+      font-size:.88rem; font-weight:700; color:var(--blue);
+      text-transform:uppercase; letter-spacing:.8px;
+      border-bottom:2px solid var(--border); padding-bottom:7px; margin-bottom:14px;
+    }
+    .summary-card h2.orange { color:var(--orange); border-color:var(--orange); }
+    .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+    .summary-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .summary-item { text-align:center; }
+    .summary-item .s-label { font-size:.69rem; color:var(--sub); }
+    .summary-item .s-value { font-size:.9rem; font-weight:600; color:var(--text); }
+
+    /* ── FEATURE ENGINEERING BLOCK ── */
+    .fe-card {
+      background: linear-gradient(135deg, #FEF9E7, #FFF8EF);
+      border: 1.5px solid #F5CBA7;
+      border-radius: 9px;
+      padding: 18px 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .fe-card h2 {
+      font-size:.88rem; font-weight:700; color:var(--orange);
+      text-transform:uppercase; letter-spacing:.8px;
+      border-bottom:2px solid #F5CBA7; padding-bottom:7px; margin-bottom:14px;
+    }
+    .fe-item { text-align:center; }
+    .fe-item .fe-label { font-size:.69rem; color:var(--sub); }
+    .fe-item .fe-value { font-size:1.15rem; font-weight:700; color:var(--orange); }
+    .fe-item .fe-formula { font-size:.65rem; color:#AAB7C4; margin-top:2px; }
+
+    /* ── DISCLAIMER ── */
+    .disclaimer {
+      background:#EBF5FB; border:1px solid #AED6F1;
+      border-radius:7px; padding:13px 17px;
+      font-size:.81rem; color:#1A5276; margin-bottom:18px;
+    }
+
+    .btn-back {
+      display:inline-block; padding:11px 26px;
+      background:var(--blue); color:white;
+      border-radius:7px; text-decoration:none;
+      font-weight:600; font-size:.93rem;
+      transition:opacity .2s;
+    }
+    .btn-back:hover { opacity:.88; }
+
+    footer {
+      text-align:center; padding:18px;
+      font-size:.77rem; color:var(--sub);
+      border-top:1px solid var(--border); background:white;
+    }
+
+    @media (max-width:560px) {
+      .info-grid { grid-template-columns:1fr; }
+      .summary-grid { grid-template-columns:repeat(2,1fr); }
+      .summary-grid-3 { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🫀 Résultat de l'Analyse Risque Cardiaque</h1>
+  <p>Prédiction générée par : {{ model_name }} · 16 features (13 cliniques + 3 dérivées)</p>
+</header>
+
+<main>
+
+  <!-- RESULT BOX -->
+  <div class="result-box {{ result.niveau_class }}">
+    {% if result.malade %}
+      <div class="result-icon">⚠️</div>
+      <div class="result-title">Risque de Maladie Cardiaque Détecté</div>
+    {% else %}
+      <div class="result-icon">✅</div>
+      <div class="result-title">Aucun Risque Cardiaque Significatif</div>
+    {% endif %}
+    <div class="result-subtitle">
+      Classe prédite : <strong>{{ result.prediction }}</strong>
+      ({% if result.malade %}Malade{% else %}Sain{% endif %})
+    </div>
+
+    <div class="gauge-label">Probabilité de maladie cardiaque</div>
+    <div class="gauge-bar">
+      <div class="gauge-fill {{ result.niveau_class }}"
+           style="width: {{ result.probabilite }}%"></div>
+    </div>
+    <div class="gauge-value {{ result.niveau_class }}">{{ result.probabilite }}%</div>
+    <span class="risk-badge {{ result.niveau_class }}">Niveau de risque : {{ result.niveau }}</span>
+  </div>
+
+  <!-- INFO CARDS -->
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>Modèle utilisé</h3>
+      <p>{{ model_name }}</p>
+    </div>
+    <div class="info-card">
+      <h3>Probabilité estimée</h3>
+      <p>{{ result.probabilite }}%</p>
+    </div>
+    <div class="info-card">
+      <h3>Classe prédite</h3>
+      <p>{% if result.malade %}1 — Présence de maladie{% else %}0 — Absence de maladie{% endif %}</p>
+    </div>
+    <div class="info-card">
+      <h3>Niveau de risque</h3>
+      <p>
+        {% if result.niveau == "FAIBLE" %}🟢{% elif result.niveau == "MODÉRÉ" %}🟡{% else %}🔴{% endif %}
+        {{ result.niveau }}
+        <br><small style="font-weight:400;color:#AAB7C4;">
+          {% if result.niveau == "FAIBLE" %}Prob. &lt; 30%
+          {% elif result.niveau == "MODÉRÉ" %}Prob. entre 30% et 60%
+          {% else %}Prob. &gt; 60%{% endif %}
+        </small>
+      </p>
+    </div>
+  </div>
+
+  <!-- 13 FEATURES CLINIQUES SAISIES -->
+  <div class="summary-card">
+    <h2> Données cliniques saisies (13 features)</h2>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="s-label">Âge</div>
+        <div class="s-value">{{ form_data.age }} ans</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Sexe</div>
+        <div class="s-value">{% if form_data.sex == '1' %}Homme{% else %}Femme{% endif %}</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Douleur (cp)</div>
+        <div class="s-value">Type {{ form_data.cp }}</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Tension (trestbps)</div>
+        <div class="s-value">{{ form_data.trestbps }} mm Hg</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Cholestérol (chol)</div>
+        <div class="s-value">{{ form_data.chol }} mg/dl</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Glycémie (fbs)</div>
+        <div class="s-value">{% if form_data.fbs == '1' %}Oui{% else %}Non{% endif %}</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">ECG (restecg)</div>
+        <div class="s-value">{{ form_data.restecg }}</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">FC max (thalach)</div>
+        <div class="s-value">{{ form_data.thalach }} bpm</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Angine effort (exang)</div>
+        <div class="s-value">{% if form_data.exang == '1' %}Oui{% else %}Non{% endif %}</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Dépression ST (oldpeak)</div>
+        <div class="s-value">{{ form_data.oldpeak }}</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Pente ST (slope)</div>
+        <div class="s-value">{{ form_data.slope }}</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Vaisseaux (ca)</div>
+        <div class="s-value">{{ form_data.ca }}</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Thalassémie (thal)</div>
+        <div class="s-value">{{ form_data.thal }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 FEATURES DÉRIVÉES -->
+  <div class="fe-card">
+    <h2>⚙︎ Variables dérivées calculées automatiquement (3 features)</h2>
+    <div class="summary-grid-3">
+      <div class="fe-item">
+        <div class="fe-label">chol_thalach_ratio</div>
+        <div class="fe-value">{{ result.chol_thalach_ratio }}</div>
+        <div class="fe-formula">{{ form_data.chol }} ÷ {{ form_data.thalach }}</div>
+      </div>
+      <div class="fe-item">
+        <div class="fe-label">bp_age_product</div>
+        <div class="fe-value">{{ result.bp_age_product }}</div>
+        <div class="fe-formula">{{ form_data.trestbps }} × {{ form_data.age }}</div>
+      </div>
+      <div class="fe-item">
+        <div class="fe-label">age_group</div>
+        <div class="fe-value">{{ result.age_group }}</div>
+        <div class="fe-formula">
+          {% if result.age_group == 0 %}≤ 40 ans
+          {% elif result.age_group == 1 %}41 – 50 ans
+          {% elif result.age_group == 2 %}51 – 60 ans
+          {% else %}&gt; 60 ans{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISCLAIMER -->
+  <div class="disclaimer">
+    ⚕︎ <strong>Avertissement important :</strong> Cette prédiction est générée par un modèle
+    de machine learning entraîné sur le dataset Heart Disease UCI (303 patients) avec
+    <strong>16 features</strong> (13 cliniques + 3 dérivées par feature engineering).
+    Elle constitue uniquement un <em>outil d'aide à la décision</em> à visée académique et
+    ne remplace en aucun cas un diagnostic médical professionnel réalisé par un cardiologue.
+    En cas de symptômes, consultez immédiatement un professionnel de santé.
+  </div>
+
+  <a href="/" class="btn-back">← Nouvelle prédiction</a>
+
+</main>
+
+<footer>
+  Détection Précoce des Maladies Cardiovasculaires par Apprentissage Automatique · 16 Features
+</footer>
+
+</body>
+</html>
